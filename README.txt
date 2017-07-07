@@ -2,7 +2,7 @@
 Contributors: SlicedInvoices
 Tags: contact form 7, contact form 7 add on, contact form 7 invoice, contact form 7 invoice, contact form 7 estimate, contact form 7 quote, invoice, invoicing, quotes, estimates, invoice clients, quote request, estimate request
 Requires at least: 4.0
-Tested up to: 4.5.1
+Tested up to: 4.4.1
 Stable tag: 1.01
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
@@ -10,9 +10,6 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 Create an online quote request form using Contact Form 7. Every form entry then automatically creates a quote in the Sliced Invoices plugin.
 
 == Description ==
-
-**[View Live Demo](http://slicedinvoices.com/demo/quote-request-contact-form-7/)**
-
 Imagine having a form on your website that allows your visitors to basically create their own quotes for you! 
 
 All you need to do once they have submitted the form is read the description of work they require and then set your pricing. All of their client data has already been captured and added to the quote.

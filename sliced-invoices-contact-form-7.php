@@ -5,7 +5,7 @@
  * Plugin Name:       Sliced Invoices & Contact Form 7
  * Plugin URI:        https://wordpress.org/plugins/sliced-invoices-contact-form-7
  * Description:       Create forms that allow users to submit a quote or estimate request. Requirements: The Sliced Invoices Plugin & Contact Form 7 Plugin
- * Version:           1.0
+ * Version:           1.01
  * Author:            Sliced Invoices
  * Author URI:        https://slicedinvoices.com/
  * Text Domain:       sliced-invoices-contact-form-7
@@ -15,7 +15,6 @@
 // Exit if accessed directly
 if ( ! defined('ABSPATH') ) { exit;
 }
-
 
 /**
  * Calls the class.
@@ -31,12 +30,98 @@ add_action( 'sliced_loaded', 'sliced_call_cf7_class' );
  */
 class Sliced_CF7 {
 
+    private $valid = true;
+    
     /**
      * Hook into the appropriate actions when the class is constructed.
      */
     public function __construct() {
+
+        add_filter( 'wpcf7_validate_text', array( $this, 'validate_form' ), 10, 2 );
+        add_filter( 'wpcf7_validate_text*', array( $this, 'validate_form' ), 10, 2 );
         add_filter( 'wpcf7_posted_data', array( $this, 'create_new_quote' ) );
+        
     }
+
+    /**
+     * Process the data coming from the form
+     * @since  1.0
+     */ 
+    public function validate_form($result,$tag) {
+
+        $type = $tag['type'];
+        $name = $tag['name'];
+        
+        
+        if($type == 'text*' && $_POST[$name] == ''){
+                $result['valid'] = false;
+                $result['reason'][$name] = wpcf7_get_message( 'invalid_required' );
+        }
+
+    //__________________________________________________________________________________________________
+
+        //url
+        if($name == 'url') {
+            $url = $_POST['url'];
+            
+            if($url != '') {
+                if(get_valid_url($url)){
+                    $result['valid'] = true;
+                } else {
+                    $result['valid'] = false;
+                    $result['reason'][$name] = 'Entered URL is invalid.';
+                }
+            }
+        }
+        
+    //__________________________________________________________________________________________________
+        
+        //emailAddress
+        if($name == 'sliced_client_email') {
+            $emailAddress = $_POST['sliced_client_email'];
+            
+            if($emailAddress != '') {
+                if(substr($emailAddress, 0, 1) == '.' || !preg_match('/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})$/i', $emailAddress)) {  
+                        $result['valid'] = false;
+                        $result['reason'][$name] = 'Entered Email is Invalid.';
+                }
+            }
+        }
+
+    //__________________________________________________________________________________________________
+
+    // It will accept character, character + numeric value
+    // It will not accept special characters
+
+        //fullName
+        $allNames = array('sliced_client_name');
+        foreach($allNames as $uniNames) {
+            if($name == $uniNames) {
+                $fullName = $_POST[$uniNames];
+
+                    if($fullName != '') {
+                        if(!preg_match('/^[A-Z0-9][a-zA-Z0-9 ]+$/i', $fullName)) {
+                            $result['valid'] = false;
+                            $result['reason'][$name] = 'Please Enter a Valid Name';
+                        }
+                        
+                        if(is_numeric($fullName)){
+                            $result['valid'] = false;
+                            $result['reason'][$name] = 'Please Enter a Valid Name';
+                        }
+                    }
+
+            }
+        }
+
+        if( $result['valid'] == false) {
+            $this->valid = false;
+        }
+
+        return $result;
+
+    }
+
 
     /**
      * Process the data coming from the form
@@ -44,10 +129,14 @@ class Sliced_CF7 {
      */ 
     public function create_new_quote( $posted_data ) {
         
+        if ( ! $this->valid )
+            return;  
+                  
         if ( ! $posted_data )
             return;
 
-        if ( array_key_exists( 'sliced_client_email', $posted_data ) && array_key_exists( 'sliced_title', $posted_data ) && array_key_exists( 'sliced_client_name', $posted_data ) ) {
+        if ( $posted_data['sliced_client_email'] == '' || $posted_data['sliced_client_name'] == '' || $posted_data['sliced_title'] == '' ) 
+            return;
 
             $email       = $posted_data['sliced_client_email'];
             $name        = $posted_data['sliced_client_name'];
@@ -91,7 +180,6 @@ class Sliced_CF7 {
             );
             $client_id = $this->maybe_add_client( $client_array );
 
-        }
 
         return $posted_data;
 
