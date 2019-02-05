@@ -5,7 +5,7 @@
  * Plugin Name:       Sliced Invoices & Contact Form 7
  * Plugin URI:        https://wordpress.org/plugins/sliced-invoices-contact-form-7
  * Description:       Create forms that allow users to submit a quote or estimate request. Requirements: The Sliced Invoices Plugin & Contact Form 7 Plugin
- * Version:           1.01
+ * Version:           1.0
  * Author:            Sliced Invoices
  * Author URI:        https://slicedinvoices.com/
  * Text Domain:       sliced-invoices-contact-form-7
@@ -13,8 +13,10 @@
  */
 
 // Exit if accessed directly
-if ( ! defined('ABSPATH') ) { exit;
+if ( ! defined('ABSPATH') ) { 
+	exit;
 }
+
 
 /**
  * Calls the class.
@@ -30,113 +32,201 @@ add_action( 'sliced_loaded', 'sliced_call_cf7_class' );
  */
 class Sliced_CF7 {
 
-    private $valid = true;
-    
     /**
      * Hook into the appropriate actions when the class is constructed.
      */
     public function __construct() {
-
-        add_filter( 'wpcf7_validate_text', array( $this, 'validate_form' ), 10, 2 );
-        add_filter( 'wpcf7_validate_text*', array( $this, 'validate_form' ), 10, 2 );
-        add_filter( 'wpcf7_posted_data', array( $this, 'create_new_quote' ) );
-        
+        add_action( 'wpcf7_before_send_mail', array( $this, 'handle' ) );
     }
 
     /**
      * Process the data coming from the form
-     * @since  1.0
+     * @since  1.1
      */ 
-    public function validate_form($result,$tag) {
-
-        $type = $tag['type'];
-        $name = $tag['name'];
+	public function handle( $form ) {
+	
+		$posted_data = null;
+		
+		if ( isset( $form->posted_data ) ) {
+			$posted_data = $form->posted_data;
+		} elseif ( class_exists('WPCF7_Submission')) {
+			$submission = WPCF7_Submission::get_instance();
+			if ( $submission ) {
+				$posted_data = $submission->get_posted_data();
+			}
+		}
+		
+		if ( ! $posted_data ) {
+            return;
+		}
+		
+		if ( isset( $posted_data['sliced_quote_or_invoice'] ) && strtolower( $posted_data['sliced_quote_or_invoice'] ) === 'invoice' ) {
+			$this->create_new_invoice( $posted_data );
+		} else {
+			$this->create_new_quote( $posted_data );
+		}
+		
+	}
+	
+	
+	/**
+     * Create a new invoice
+     * @since  1.1
+     */ 
+    public function create_new_invoice( $posted_data ) {
         
-        
-        if($type == 'text*' && $_POST[$name] == ''){
-                $result['valid'] = false;
-                $result['reason'][$name] = wpcf7_get_message( 'invalid_required' );
-        }
+        if ( ! $posted_data ) {
+            return;
+		}
 
-    //__________________________________________________________________________________________________
+        if ( array_key_exists( 'sliced_client_email', $posted_data ) && array_key_exists( 'sliced_title', $posted_data ) && array_key_exists( 'sliced_client_name', $posted_data ) ) {
 
-        //url
-        if($name == 'url') {
-            $url = $_POST['url'];
+            $email       = $posted_data['sliced_client_email'];
+            $name        = $posted_data['sliced_client_name'];
+            $business    = isset( $posted_data['sliced_client_business'] ) ? $posted_data['sliced_client_business'] : $name;
+            $address     = isset( $posted_data['sliced_client_address'] ) ? $posted_data['sliced_client_address'] : '';
+            $extra       = isset( $posted_data['sliced_client_extra'] ) ? $posted_data['sliced_client_extra'] : '';
+            $website     = isset( $posted_data['sliced_client_website'] ) ? $posted_data['sliced_client_website'] : '';
+            $title       = $posted_data['sliced_title'];
+            $desc        = isset( $posted_data['sliced_description'] ) ? $posted_data['sliced_description'] : '';
+
+            // insert the post
+            $post_array = array(
+                'post_content'   => '',
+                'post_title'     => $title,
+                'post_status'    => 'publish',
+                'post_type'      => 'sliced_invoice',
+            );
+            $id = wp_insert_post( $post_array, $wp_error = false );
+
+            // set status
+			$status = null;
+			$taxonomy = 'invoice_status';
+			if ( isset( $posted_data['sliced_invoice_status'] ) && term_exists( $posted_data['sliced_invoice_status'], $taxonomy ) ) {
+				$status = $posted_data['sliced_invoice_status'];
+			}
+			wp_set_object_terms( $id, array( ( $status ? $status : 'draft' ) ), $taxonomy );
             
-            if($url != '') {
-                if(get_valid_url($url)){
-                    $result['valid'] = true;
-                } else {
-                    $result['valid'] = false;
-                    $result['reason'][$name] = 'Entered URL is invalid.';
-                }
-            }
+			// invoice number			
+			$prefix = sliced_get_invoice_prefix();
+			$suffix = sliced_get_invoice_suffix();
+			$number = sliced_get_next_invoice_number();
+		
+            // insert the post_meta
+            update_post_meta( $id, '_sliced_description', esc_html( $desc ) );
+            update_post_meta( $id, '_sliced_invoice_created', time() );
+            update_post_meta( $id, '_sliced_invoice_prefix', esc_html( $prefix ) );
+            update_post_meta( $id, '_sliced_invoice_number', esc_html( $number ) );
+			update_post_meta( $id, '_sliced_invoice_suffix', esc_html( $suffix ) );
+			update_post_meta( $id, '_sliced_number', $prefix . $number . $suffix );
+            Sliced_Invoice::update_invoice_number( $id ); // update the invoice number
+			
+			// line items
+			$line_items = array();
+			foreach ( $posted_data as $key => $value ) {
+				
+				if ( ! $value > '' ) {
+					continue;
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_qty$/', $key, $line_qty );
+				if ( ! empty( $line_qty ) ) {
+					$line_items[ $line_qty[1] ]['qty'] = esc_html( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_title$/', $key, $line_title );
+				if ( ! empty( $line_title ) ) {
+					$line_items[ $line_title[1] ]['title'] = esc_html( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_desc$/', $key, $line_desc );
+				if ( ! empty( $line_desc ) ) {
+					$line_items[ $line_desc[1] ]['description'] = wp_kses_post( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_amt$/', $key, $line_amt );
+				if ( ! empty( $line_amt ) ) {
+					$line_items[ $line_amt[1] ]['amount'] = Sliced_Shared::get_formatted_number( $value );
+				}
+			}
+			$line_items = array_values( $line_items );
+			foreach ( $line_items as &$line_item ) {
+				$line_item['taxable'] = 'on';
+				$line_item['second_taxable'] = 'on';
+			}
+			update_post_meta( $id, '_sliced_items', apply_filters( 'sliced_cf7_line_items', $line_items ) );
+			
+			// tax
+			$tax = get_option( 'sliced_tax' );
+			update_post_meta( $id, '_sliced_tax_calc_method', Sliced_Shared::get_tax_calc_method( $id ) );
+			update_post_meta( $id, '_sliced_tax', sliced_get_tax_amount_formatted( $id ) );
+			update_post_meta( $id, '_sliced_tax_name', sliced_get_tax_name( $id ) );
+			update_post_meta( $id, '_sliced_additional_tax_name', isset( $tax['sliced_additional_tax_name'] ) ? $tax['sliced_additional_tax_name'] : '' );
+			update_post_meta( $id, '_sliced_additional_tax_rate', isset( $tax['sliced_additional_tax_rate'] ) ? $tax['sliced_additional_tax_rate'] : '' );
+			update_post_meta( $id, '_sliced_additional_tax_type', isset( $tax['sliced_additional_tax_type'] ) ? $tax['sliced_additional_tax_type'] : '' );
+			
+			// terms
+			$invoices = get_option( 'sliced_invoices' );
+			$terms    = isset( $invoices['terms'] ) ? $invoices['terms'] : '';
+			if ( $terms ) {
+				update_post_meta( $id, '_sliced_invoice_terms', $terms );
+			}
+			
+			// payment methods
+			if ( function_exists( 'sliced_get_accepted_payment_methods' ) ) {
+				$payment = sliced_get_accepted_payment_methods();
+				update_post_meta( $id, '_sliced_payment_methods', array_keys($payment) );
+			}
+			
+            // client
+            $client_array = array(
+                'name'          => trim( $name ),
+                'email'         => trim( $email ),
+                'website'       => trim( $website ),
+                'business'      => $business,
+                'address'       => wpautop( $address ),
+                'extra_info'    => wpautop( $extra ),
+                'post_id'       => $id,
+              
+            );
+            $client_id = $this->maybe_add_client( $client_array );
+			
+			// maybe send it
+			if ( isset( $posted_data['sliced_invoice_send'] ) && strtolower( $posted_data['sliced_invoice_send'] ) === 'true' ) {
+				if ( class_exists( 'Sliced_Pdf' ) ) {
+					// temporary solution to solve conflict between PDF extension and Secure Invoices, when doing ajax form submission
+					$_GET['print_pdf'] = 'true';
+					if ( ! defined('DOING_AJAX') ) {
+						define('DOING_AJAX',true);
+					}
+				}
+				$send = new Sliced_Notifications;
+				$send->send_the_invoice( $id );
+				if ( $status ) {
+					// set the status again, because send_the_quote() changes the status to "sent"
+					wp_set_object_terms( $id, array( $status ), $taxonomy );
+				}
+			}
+
         }
-        
-    //__________________________________________________________________________________________________
-        
-        //emailAddress
-        if($name == 'sliced_client_email') {
-            $emailAddress = $_POST['sliced_client_email'];
-            
-            if($emailAddress != '') {
-                if(substr($emailAddress, 0, 1) == '.' || !preg_match('/^([*+!.&#$¦\'\\%\/0-9a-z^_`{}=?~:-]+)@(([0-9a-z-]+\.)+[0-9a-z]{2,4})$/i', $emailAddress)) {  
-                        $result['valid'] = false;
-                        $result['reason'][$name] = 'Entered Email is Invalid.';
-                }
-            }
-        }
 
-    //__________________________________________________________________________________________________
-
-    // It will accept character, character + numeric value
-    // It will not accept special characters
-
-        //fullName
-        $allNames = array('sliced_client_name');
-        foreach($allNames as $uniNames) {
-            if($name == $uniNames) {
-                $fullName = $_POST[$uniNames];
-
-                    if($fullName != '') {
-                        if(!preg_match('/^[A-Z0-9][a-zA-Z0-9 ]+$/i', $fullName)) {
-                            $result['valid'] = false;
-                            $result['reason'][$name] = 'Please Enter a Valid Name';
-                        }
-                        
-                        if(is_numeric($fullName)){
-                            $result['valid'] = false;
-                            $result['reason'][$name] = 'Please Enter a Valid Name';
-                        }
-                    }
-
-            }
-        }
-
-        if( $result['valid'] == false) {
-            $this->valid = false;
-        }
-
-        return $result;
+		// done
+        do_action( 'sliced_cf7_invoice_created', $id, $posted_data );
 
     }
-
-
-    /**
-     * Process the data coming from the form
+	
+	
+	/**
+     * Create a new quote
      * @since  1.0
      */ 
     public function create_new_quote( $posted_data ) {
         
-        if ( ! $this->valid )
-            return;  
-                  
-        if ( ! $posted_data )
+        if ( ! $posted_data ) {
             return;
+		}
 
-        if ( $posted_data['sliced_client_email'] == '' || $posted_data['sliced_client_name'] == '' || $posted_data['sliced_title'] == '' ) 
-            return;
+        if ( array_key_exists( 'sliced_client_email', $posted_data ) && array_key_exists( 'sliced_title', $posted_data ) && array_key_exists( 'sliced_client_name', $posted_data ) ) {
 
             $email       = $posted_data['sliced_client_email'];
             $name        = $posted_data['sliced_client_name'];
@@ -156,18 +246,80 @@ class Sliced_CF7 {
             );
             $id = wp_insert_post( $post_array, $wp_error = false );
 
-            // set to a draft
-            $taxonomy = 'quote_status';
-            wp_set_object_terms( $id, array( 'draft' ), $taxonomy );
+            // set status
+			$status = null;
+			$taxonomy = 'quote_status';
+			if ( isset( $posted_data['sliced_quote_status'] ) && term_exists( $posted_data['sliced_quote_status'], $taxonomy ) ) {
+				$status = $posted_data['sliced_quote_status'];
+			}
+			wp_set_object_terms( $id, array( ( $status ? $status : 'draft' ) ), $taxonomy );
             
+			// quote number			
+			$prefix = sliced_get_quote_prefix();
+			$suffix = sliced_get_quote_suffix();
+			$number = sliced_get_next_quote_number();
+			
             // insert the post_meta
             update_post_meta( $id, '_sliced_description', esc_html( $desc ) );
             update_post_meta( $id, '_sliced_quote_created', time() );
-            update_post_meta( $id, '_sliced_quote_prefix', esc_html( sliced_get_quote_prefix() ) );
-            update_post_meta( $id, '_sliced_quote_number', esc_html( sliced_get_next_quote_number() ) );
-            Sliced_Quote::update_quote_number(); // update the invoice number
+            update_post_meta( $id, '_sliced_quote_prefix', esc_html( $prefix ) );
+            update_post_meta( $id, '_sliced_quote_number', esc_html( $number ) );
+			update_post_meta( $id, '_sliced_quote_suffix', esc_html( $suffix ) );
+			update_post_meta( $id, '_sliced_number', $prefix . $number . $suffix );
+            Sliced_Quote::update_quote_number( $id ); // update the quote number
 
-            // put the client details into array
+			// line items
+			$line_items = array();
+			foreach ( $posted_data as $key => $value ) {
+				
+				if ( ! $value > '' ) {
+					continue;
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_qty$/', $key, $line_qty );
+				if ( ! empty( $line_qty ) ) {
+					$line_items[ $line_qty[1] ]['qty'] = esc_html( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_title$/', $key, $line_title );
+				if ( ! empty( $line_title ) ) {
+					$line_items[ $line_title[1] ]['title'] = esc_html( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_desc$/', $key, $line_desc );
+				if ( ! empty( $line_desc ) ) {
+					$line_items[ $line_desc[1] ]['description'] = wp_kses_post( $value );
+				}
+				
+				preg_match( '/^sliced_line_item_([0-9]+)_amt$/', $key, $line_amt );
+				if ( ! empty( $line_amt ) ) {
+					$line_items[ $line_amt[1] ]['amount'] = Sliced_Shared::get_formatted_number( $value );
+				}
+			}
+			$line_items = array_values( $line_items );
+			foreach ( $line_items as &$line_item ) {
+				$line_item['taxable'] = 'on';
+				$line_item['second_taxable'] = 'on';
+			}
+			update_post_meta( $id, '_sliced_items', apply_filters( 'sliced_cf7_line_items', $line_items ) );
+			
+			// tax
+			$tax = get_option( 'sliced_tax' );
+			update_post_meta( $id, '_sliced_tax_calc_method', Sliced_Shared::get_tax_calc_method( $id ) );
+			update_post_meta( $id, '_sliced_tax', sliced_get_tax_amount_formatted( $id ) );
+			update_post_meta( $id, '_sliced_tax_name', sliced_get_tax_name( $id ) );
+			update_post_meta( $id, '_sliced_additional_tax_name', isset( $tax['sliced_additional_tax_name'] ) ? $tax['sliced_additional_tax_name'] : '' );
+			update_post_meta( $id, '_sliced_additional_tax_rate', isset( $tax['sliced_additional_tax_rate'] ) ? $tax['sliced_additional_tax_rate'] : '' );
+			update_post_meta( $id, '_sliced_additional_tax_type', isset( $tax['sliced_additional_tax_type'] ) ? $tax['sliced_additional_tax_type'] : '' );
+		
+			// terms
+			$quotes = get_option( 'sliced_quotes' );
+			$terms  = isset( $quotes['terms'] ) ? $quotes['terms'] : '';
+			if ( $terms ) {
+				update_post_meta( $id, '_sliced_quote_terms', $terms );
+			}
+			
+            // client
             $client_array = array(
                 'name'          => trim( $name ),
                 'email'         => trim( $email ),
@@ -179,9 +331,28 @@ class Sliced_CF7 {
               
             );
             $client_id = $this->maybe_add_client( $client_array );
+			
+			// maybe send it
+			if ( isset( $posted_data['sliced_quote_send'] ) && strtolower( $posted_data['sliced_quote_send'] ) === 'true' ) {
+				if ( class_exists( 'Sliced_Pdf' ) ) {
+					// temporary solution to solve conflict between PDF extension and Secure Invoices, when doing ajax form submission
+					$_GET['print_pdf'] = 'true';
+					if ( ! defined('DOING_AJAX') ) {
+						define('DOING_AJAX',true);
+					}
+				}
+				$send = new Sliced_Notifications;
+				$send->send_the_quote( $id );
+				if ( $status ) {
+					// set the status again, because send_the_quote() changes the status to "sent"
+					wp_set_object_terms( $id, array( $status ), $taxonomy );
+				}
+			}
 
+        }
 
-        return $posted_data;
+		// done
+        do_action( 'sliced_cf7_quote_created', $id, $posted_data );
 
     }
 
