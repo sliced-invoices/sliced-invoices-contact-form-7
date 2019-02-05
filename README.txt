@@ -2,12 +2,12 @@
 Contributors: SlicedInvoices
 Tags: contact form 7, contact form 7 add on, contact form 7 invoice, contact form 7 invoice, contact form 7 estimate, contact form 7 quote, invoice, invoicing, quotes, estimates, invoice clients, quote request, estimate request
 Requires at least: 4.0
-Tested up to: 4.4.1
-Stable tag: 1.01
+Tested up to: 5.0
+Stable tag: 1.1.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Create an online quote request form using Contact Form 7. Every form entry then automatically creates a quote in the Sliced Invoices plugin.
+Create an online quote or invoice request form using Contact Form 7. Every form entry then automatically creates a quote/invoice in the Sliced Invoices plugin.
 
 == Description ==
 Imagine having a form on your website that allows your visitors to basically create their own quotes for you! 
@@ -20,13 +20,13 @@ All you need to do once they have submitted the form is read the description of 
 *   [Contact Form 7 Plugin](https://wordpress.org/plugins/contact-form-7/) (free)
 
 = Initial Setup =
-Once you have both plugins installed and activated, you simply need to create your Quote Request form that contains the following fields:
+Once you have both plugins installed and activated, you simply need to create your Quote or Invoice Request form that contains the following fields:
 
 **Required Fields**
 
 *   sliced_client_name - the Client Name
 *   sliced_client_email - the Client Email
-*   sliced_title - becomes the Quote title
+*   sliced_title - becomes the Quote/Invoice title
 
 **Optional Fields**
 
@@ -35,19 +35,40 @@ You can also add the following optional fields that will map to other Sliced Inv
 *   sliced_client_business - the Client Business Name - recommended
 *   sliced_client_address - the Client Address
 *   sliced_client_extra - the Client Extra Info field
-*   sliced_description - becomes the Quote description - recommended
+*   sliced_description - becomes the Quote/Invoice description - recommended
+
+Line Items:
+
+For line items, you can use the following tags.  Just replace {X} with a number.  For example sliced_line_item_1_title, sliced_line_item_2_title, etc.
+
+*   sliced_line_item_{X}_qty - the quantity for line item #{X}
+*   sliced_line_item_{X}_title - the title for line item #{X}
+*   sliced_line_item_{X}_desc - the description for line item #{X}
+*   sliced_line_item_{X}_amt - the amount for line item #{X}
+
+Other Fields:
+
+*   sliced_invoice_status - allows you to set the status of the invoice (unpaid, paid, etc.).  Default is 'draft'.
+*   sliced_quote_status - allows you to set the status of the quote (accepted, declined, etc.).  Default is 'draft'.
+
 
 *NOTE: the names of the fields must match exactly as shown*
 
 **See the [FAQs](https://wordpress.org/plugins/sliced-invoices-contact-form-7/faq) for an example form.**
 
-You can also set up confirmations and notifications as per normal in the Contact Form 7 form settings. This plugin does not send notifications, it relies on the Contact Form 7 notifications.
+You can also set up confirmations and notifications as per normal in the Contact Form 7 form settings.  However if you want to send the quote or invoice automatically, add the following tag to your form:
+
+`[hidden sliced_quote_send "true"]` (for quotes)
+
+or
+
+`[hidden sliced_invoice_send "true"]` (for invoices)
 
 With the form setup and the fields mapped, you simply need to add the form shortcode to one of your pages. When a client fills in your Quote Request form, a new quote will automatically be created with all of their details added to the quote. 
 
 You then need to simply add the line items and pricing to the quote and send to the client.
 
-If the email address that the client fills in is not already linked to a client, the plugin will automatically create a new client with this email.
+If the email address that the client fills in is not already linked to a client, the plugin will automatically create a new client with this email.  (Don't worry, if the email address provided matches an existing client/user, it will not be modified for security reasons.)
 
 
 
@@ -95,8 +116,17 @@ An example form:
 
 
 == Changelog ==
+=1.1.0 =
+* NEW: add support for creating invoices (not just quotes)
+* NEW: add new fields for handling of line items, status, etc.
+* NEW: automatically populate new quotes/invoices with default Terms and Tax settings (based on your settings)
+* NEW: ability to automatically send quote/invoice upon form submission
+* NEW: added new actions 'sliced_cf7_invoice_created' and 'sliced_cf7_quote_created'
+* NEW: added new filter 'sliced_cf7_line_items'
+* FIX: issue with quote numbers not incrementing
+
 =1.01 =
-FIX: Add custom validation and stop duplicate entries if invalid fields
+* FIX: Add custom validation and stop duplicate entries if invalid fields
 
 =1.0 =
 * Initial release at WordPress.org
