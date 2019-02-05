@@ -58,11 +58,13 @@ Other Fields:
 
 You can also set up confirmations and notifications as per normal in the Contact Form 7 form settings.  However if you want to send the quote or invoice automatically, add the following tag to your form:
 
-`[hidden sliced_quote_send "true"]` (for quotes)
+`[hidden sliced_quote_send "true"]`
+(for quotes)
 
 or
 
-`[hidden sliced_invoice_send "true"]` (for invoices)
+`[hidden sliced_invoice_send "true"]`
+(for invoices)
 
 With the form setup and the fields mapped, you simply need to add the form shortcode to one of your pages. When a client fills in your Quote Request form, a new quote will automatically be created with all of their details added to the quote. 
 
