@@ -24,7 +24,7 @@ if ( ! defined('ABSPATH') ) {
 function sliced_call_cf7_class() {
     new Sliced_CF7();
 }
-add_action( 'sliced_loaded', 'sliced_call_cf7_class' );
+add_action( 'init', 'sliced_call_cf7_class' );
 
 
 /** 
@@ -36,7 +36,13 @@ class Sliced_CF7 {
      * Hook into the appropriate actions when the class is constructed.
      */
     public function __construct() {
+		
+		if ( ! $this->validate_settings() ) {
+			return;
+		}
+		
         add_action( 'wpcf7_before_send_mail', array( $this, 'handle' ) );
+		
     }
 
     /**
@@ -409,6 +415,59 @@ class Sliced_CF7 {
         return $client_id;
 
     }
+	
+	
+	/**
+     * Output requirements not met notice.
+     *
+     * @since   1.1.1
+     */
+	public function requirements_not_met_notice_sliced() {
+		echo '<div id="message" class="error">';
+		echo '<p>' . sprintf( __( 'Sliced Invoices & Contact Form 7 extension cannot find the required <a href="%s">Sliced Invoices plugin</a>. Please make sure the core Sliced Invoices plugin is <a href="%s">installed and activated</a>.', 'sliced-invoices-contact-form-7' ), 'https://wordpress.org/plugins/sliced-invoices/', admin_url( 'plugins.php' ) ) . '</p>';
+		echo '</div>';
+	}
+	
+	
+	/**
+     * Output requirements not met notice.
+     *
+     * @since   1.1.1
+     */
+	public function requirements_not_met_notice_wpcf7() {
+		echo '<div id="message" class="error">';
+		echo '<p>' . sprintf( __( 'Sliced Invoices & Contact Form 7 extension cannot find the required <a href="%s">Contact Form 7 plugin</a>. Please make sure the Contact Form 7 plugin is <a href="%s">installed and activated</a>.', 'sliced-invoices-contact-form-7' ), 'https://wordpress.org/plugins/contact-form-7/', admin_url( 'plugins.php' ) ) . '</p>';
+		echo '</div>';
+	}
+	
+	
+	/**
+     * Validate settings, make sure all requirements met, etc.
+     *
+     * @since   1.1.1
+     */
+	public function validate_settings() {
+	
+		$validated = true;
+	
+		if ( ! class_exists( 'Sliced_Invoices' ) ) {
+			
+			// Add a dashboard notice.
+			add_action( 'all_admin_notices', array( $this, 'requirements_not_met_notice_sliced' ) );
+
+			$validated = false;
+		}
+		
+		if ( ! class_exists( 'WPCF7' ) ) {
+			
+			// Add a dashboard notice.
+			add_action( 'all_admin_notices', array( $this, 'requirements_not_met_notice_wpcf7' ) );
+
+			$validated = false;
+		}
+		
+		return $validated;
+	}
 
 
 }
