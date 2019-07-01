@@ -3,7 +3,7 @@ Contributors: SlicedInvoices
 Tags: contact form 7, contact form 7 add on, contact form 7 invoice, contact form 7 invoice, contact form 7 estimate, contact form 7 quote, invoice, invoicing, quotes, estimates, invoice clients, quote request, estimate request
 Requires at least: 4.0
 Tested up to: 5.0
-Stable tag: 1.1.0
+Stable tag: 1.1.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
@@ -118,6 +118,9 @@ An example form:
 
 
 == Changelog ==
+=1.1.1 =
+* NEW: add requirements check. If either of the 2 required plugins are not found (Contact Form 7 or Sliced Invoices), a notice will be displayed to tell you this.
+
 =1.1.0 =
 * NEW: add support for creating invoices (not just quotes)
 * NEW: add new fields for handling of line items, status, etc.
