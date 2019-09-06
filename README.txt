@@ -27,6 +27,11 @@ Once you have both plugins installed and activated, you simply need to create yo
 *   sliced_client_name - the Client Name
 *   sliced_client_email - the Client Email
 *   sliced_title - becomes the Quote/Invoice title
+*   sliced_quote_or_invoice - should be "quote" to create a quote, or "invoice" to create an invoice.  For example:
+
+`[hidden sliced_quote_or_invoice "invoice"]`
+
+*If sliced_quote_or_invoice is not included in the form, then "quote" will be assumed by default.*
 
 **Optional Fields**
 
