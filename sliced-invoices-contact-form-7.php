@@ -453,7 +453,7 @@ class Sliced_CF7 {
 		if ( ! class_exists( 'Sliced_Invoices' ) ) {
 			
 			// Add a dashboard notice.
-			add_action( 'all_admin_notices', array( $this, 'requirements_not_met_notice_sliced' ) );
+			add_action( 'admin_notices', array( $this, 'requirements_not_met_notice_sliced' ) );
 
 			$validated = false;
 		}
@@ -461,7 +461,7 @@ class Sliced_CF7 {
 		if ( ! class_exists( 'WPCF7' ) ) {
 			
 			// Add a dashboard notice.
-			add_action( 'all_admin_notices', array( $this, 'requirements_not_met_notice_wpcf7' ) );
+			add_action( 'admin_notices', array( $this, 'requirements_not_met_notice_wpcf7' ) );
 
 			$validated = false;
 		}
