@@ -123,13 +123,13 @@ An example form:
 
 
 == Changelog ==
-=1.1.2 =
+= 1.1.2 =
 * FIX: display issue with admin notices.
 
-=1.1.1 =
+= 1.1.1 =
 * NEW: add requirements check. If either of the 2 required plugins are not found (Contact Form 7 or Sliced Invoices), a notice will be displayed to tell you this.
 
-=1.1.0 =
+= 1.1.0 =
 * NEW: add support for creating invoices (not just quotes)
 * NEW: add new fields for handling of line items, status, etc.
 * NEW: automatically populate new quotes/invoices with default Terms and Tax settings (based on your settings)
@@ -138,8 +138,8 @@ An example form:
 * NEW: added new filter 'sliced_cf7_line_items'
 * FIX: issue with quote numbers not incrementing
 
-=1.01 =
+= 1.01 =
 * FIX: Add custom validation and stop duplicate entries if invalid fields
 
-=1.0 =
+= 1.0 =
 * Initial release at WordPress.org
