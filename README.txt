@@ -2,10 +2,10 @@
 Contributors: SlicedInvoices
 Tags: contact form 7, contact form 7 add on, contact form 7 invoice, contact form 7 invoice, contact form 7 estimate, contact form 7 quote, invoice, invoicing, quotes, estimates, invoice clients, quote request, estimate request
 Requires at least: 4.0
-Tested up to: 5.7
-Stable tag: 1.1.2
-License: GNU General Public License v3.0
-License URI: http://www.gnu.org/licenses/gpl-3.0.html
+Tested up to: 6.0
+Stable tag: 1.1.3
+License: GPLv2
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
 Create an online quote or invoice request form using Contact Form 7. Every form entry then automatically creates a quote/invoice in the Sliced Invoices plugin.
 
@@ -59,7 +59,7 @@ Other Fields:
 
 *NOTE: the names of the fields must match exactly as shown*
 
-**See the [FAQs](https://wordpress.org/plugins/sliced-invoices-contact-form-7/faq) for an example form.**
+**See below for an example form.**
 
 You can also set up confirmations and notifications as per normal in the Contact Form 7 form settings.  However if you want to send the quote or invoice automatically, add the following tag to your form:
 
@@ -77,16 +77,7 @@ You then need to simply add the line items and pricing to the quote and send to 
 
 If the email address that the client fills in is not already linked to a client, the plugin will automatically create a new client with this email.  (Don't worry, if the email address provided matches an existing client/user, it will not be modified for security reasons.)
 
-
-
-== Installation ==
-1. Upload plugin to the `/wp-content/plugins/` directory
-1. Activate the plugin through the 'Plugins' menu in WordPress
-
-
-== Frequently Asked Questions ==
-
-An example form:
+= An example form: =
 
 `<p>Your Name (required)<br />
     [text* sliced_client_name] </p>
@@ -115,6 +106,25 @@ An example form:
 <p>[submit "Send"]</p>`
 
 
+== Installation ==
+1. Upload plugin to the `/wp-content/plugins/` directory
+1. Activate the plugin through the 'Plugins' menu in WordPress
+
+
+== Frequently Asked Questions ==
+
+= Minimum System Requirements =
+
+* WordPress 4.0 or newer
+* Contact Form 7 version 5.0 or newer
+* Sliced Invoices 3.7 or newer
+* PHP version from 5.5 up to 8.0
+
+= Where can I get help? =
+
+For all support issues please [open a Support Ticket on our website](https://slicedinvoices.com/support-ticket/).
+
+
 == Screenshots ==
 1. Creating the Quote Request Form
 2. Inserting the Quote Request Form into a page
@@ -123,6 +133,10 @@ An example form:
 
 
 == Changelog ==
+= 1.1.3 =
+* UPDATE: changes for compatibility with forthcoming Sliced Invoices v3.9.0.
+* UPDATE: PHP 8.0 compatibility.
+
 = 1.1.2 =
 * FIX: display issue with admin notices.
 
@@ -130,16 +144,16 @@ An example form:
 * NEW: add requirements check. If either of the 2 required plugins are not found (Contact Form 7 or Sliced Invoices), a notice will be displayed to tell you this.
 
 = 1.1.0 =
-* NEW: add support for creating invoices (not just quotes)
+* NEW: add support for creating invoices (not just quotes).
 * NEW: add new fields for handling of line items, status, etc.
-* NEW: automatically populate new quotes/invoices with default Terms and Tax settings (based on your settings)
-* NEW: ability to automatically send quote/invoice upon form submission
-* NEW: added new actions 'sliced_cf7_invoice_created' and 'sliced_cf7_quote_created'
-* NEW: added new filter 'sliced_cf7_line_items'
-* FIX: issue with quote numbers not incrementing
+* NEW: automatically populate new quotes/invoices with default Terms and Tax settings (based on your settings).
+* NEW: ability to automatically send quote/invoice upon form submission.
+* NEW: added new actions 'sliced_cf7_invoice_created' and 'sliced_cf7_quote_created'.
+* NEW: added new filter 'sliced_cf7_line_items'.
+* FIX: issue with quote numbers not incrementing.
 
 = 1.01 =
-* FIX: Add custom validation and stop duplicate entries if invalid fields
+* FIX: Add custom validation and stop duplicate entries if invalid fields.
 
 = 1.0 =
-* Initial release at WordPress.org
+* Initial release at WordPress.org.

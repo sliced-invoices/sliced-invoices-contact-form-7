@@ -1,18 +1,17 @@
 <?php
-
 /**
  * @wordpress-plugin
  * Plugin Name:       Sliced Invoices & Contact Form 7
  * Plugin URI:        https://wordpress.org/plugins/sliced-invoices-contact-form-7
  * Description:       Create forms that allow users to submit a quote or estimate request. Requirements: The Sliced Invoices Plugin & Contact Form 7 Plugin
- * Version:           1.1.2
+ * Version:           1.1.3
  * Author:            Sliced Invoices
  * Author URI:        https://slicedinvoices.com/
  * Text Domain:       sliced-invoices-contact-form-7
  * Domain Path:       /languages
- * Copyright:         © 2021 Sliced Software, LLC. All rights reserved.
- * License:           GNU General Public License v3.0
- * License URI:       http://www.gnu.org/licenses/gpl-3.0.html
+ * Copyright:         © 2022 Sliced Software, LLC. All rights reserved.
+ * License:           GPLv2
+ * License URI:       http://www.gnu.org/licenses/gpl-2.0.html
  */
 
 // Exit if accessed directly
