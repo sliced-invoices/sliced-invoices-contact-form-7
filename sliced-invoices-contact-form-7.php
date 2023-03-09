@@ -137,6 +137,11 @@ class Sliced_CF7 {
 					continue;
 				}
 				
+				if ( is_array( $value ) )
+				{
+					$value = implode( ', ', (array) $value );
+				}
+				
 				preg_match( '/^sliced_line_item_([0-9]+)_qty$/', $key, $line_qty );
 				if ( ! empty( $line_qty ) ) {
 					$line_items[ $line_qty[1] ]['qty'] = esc_html( $value );
@@ -282,6 +287,11 @@ class Sliced_CF7 {
 				
 				if ( ! $value > '' ) {
 					continue;
+				}
+				
+				if ( is_array( $value ) )
+				{
+					$value = implode( ', ', (array) $value );
 				}
 				
 				preg_match( '/^sliced_line_item_([0-9]+)_qty$/', $key, $line_qty );
